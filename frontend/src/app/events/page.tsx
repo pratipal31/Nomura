@@ -144,7 +144,7 @@ class GoogleMapsLoader {
             this.loading = true;
 
             const script = document.createElement('script');
-            script.src = "https://maps.googleapis.com/maps/api/js?key=AIzaSyD3SNq4womYbjcOYoUr-k1k-M25otKHLTQ&libraries=geometry";
+            script.src = "https://maps.googleapis.com/maps/api/js?key=API_KEY&libraries=geometry";
             script.async = true;
             script.defer = true;
 
