@@ -11,6 +11,9 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timedelta
 import re
+import logging
+import speech_recognition as sr
+import io
 
 app = Flask(__name__)
 CORS(app) 
@@ -24,6 +27,24 @@ logger = logging.getLogger(__name__)
 LM_STUDIO_BASE_URL = "http://127.0.0.1:1234"
 CHAT_ENDPOINT = f"{LM_STUDIO_BASE_URL}/v1/chat/completions"
 MODELS_ENDPOINT = f"{LM_STUDIO_BASE_URL}/v1/models"
+
+def generate_event_template(prompt):
+    payload = {
+        "model": "your-model-id",  # Replace with your LM Studio model ID
+        "messages": [
+            {"role": "system", "content": "You are an event organizer assistant that creates templates for community cleanup events."},
+            {"role": "user", "content": f"Create a detailed event template for this cleanup drive prompt: {prompt}"}
+        ],
+        "temperature": 0.5,
+        "max_tokens": 600
+    }
+
+    response = requests.post(CHAT_ENDPOINT, json=payload)
+    if response.status_code == 200:
+        result = response.json()
+        return result['choices'][0]['message']['content']
+    else:
+        raise Exception(f"LM Studio error: {response.status_code}")
 
 def init_db():
     conn = sqlite3.connect('users.db')
@@ -52,6 +73,20 @@ def init_db():
             used BOOLEAN DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+    ''')
+    
+    # Events table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS events (
+            event_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            admin_id INTEGER NOT NULL,
+            date TEXT NOT NULL,
+            place TEXT NOT NULL,
+            image TEXT,
+            template TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (admin_id) REFERENCES users (id)
         )
     ''')
     
@@ -122,6 +157,85 @@ def send_reset_email(email, token):
         return False
 
 # Routes
+@app.route('/generate-event-template', methods=['POST'])
+def generate_event():
+    try:
+        data = request.get_json()
+        prompt = data.get('prompt', '')
+        if not prompt:
+            return jsonify({"success": False, "error": "Prompt is required."}), 400
+
+        content = generate_event_template(prompt)
+        return jsonify({"success": True, "template": content})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/create-event', methods=['POST'])
+def create_event():
+    try:
+        data = request.get_json()
+        admin_id = data['admin_id']
+        date = data['date']
+        place = data['place']
+        image = data.get('image', '')
+        template = data['template']
+
+        conn = sqlite3.connect('events.db')
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT INTO events (admin_id, date, place, image, template)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (admin_id, date, place, image, template))
+        conn.commit()
+        conn.close()
+
+        return jsonify({"success": True, "message": "Event created successfully"})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/get-events', methods=['GET'])
+def get_events():
+    try:
+        conn = sqlite3.connect('events.db')
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM events")
+        rows = cursor.fetchall()
+        conn.close()
+
+        events = [
+            {
+                "event_id": row[0],
+                "admin_id": row[1],
+                "date": row[2],
+                "place": row[3],
+                "image": row[4],
+                "template": row[5],
+                "created_at": row[6],
+            }
+            for row in rows
+        ]
+
+        return jsonify({"success": True, "events": events})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/speech-to-text', methods=['GET'])
+def speech_to_text():
+    try:
+        recognizer = sr.Recognizer()
+        with sr.Microphone() as source:
+            print("Listening...")
+            audio = recognizer.listen(source, timeout=5)
+
+        text = recognizer.recognize_google(audio)
+        return jsonify({"success": True, "text": text})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+@app.route('/health', methods=['GET'])
+def health():
+    return jsonify({"status": "healthy"})
+
 @app.route('/api/register', methods=['POST'])
 def register():
     try:
