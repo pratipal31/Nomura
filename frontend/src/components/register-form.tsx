@@ -1,7 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client"
 
-import type React from "react"
-import { useState } from "react"
+import React, { useState } from "react"
 
 export function RegisterForm() {
   const [form, setForm] = useState({
@@ -10,21 +10,51 @@ export function RegisterForm() {
     phone: "",
     password: "",
     confirmPassword: "",
-    isVolunteer: true,
   })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
+  const [success, setSuccess] = useState("")
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value })
+    if (error) setError("") // Clear error when user starts typing
   }
 
-  const handleToggle = () => {
-    setForm({ ...form, isVolunteer: !form.isVolunteer })
-  }
+  const handleSubmit = async () => {
+    setLoading(true)
+    setError("")
+    setSuccess("")
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    console.log("Registering:", form)
-    window.location.href = "/"
+    try {
+      const response = await fetch('http://localhost:5000/api/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(form),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setSuccess('Registration successful! Redirecting to login...')
+        
+        // Store user data in localStorage
+        localStorage.setItem('user_id', data.user_id.toString())
+        localStorage.setItem('user_data', JSON.stringify(data.user))
+        
+        // Redirect after a short delay
+        setTimeout(() => {
+          window.location.href = "/"
+        }, 2000)
+      } else {
+        setError(data.error || 'Registration failed')
+      }
+    } catch (err) {
+      setError('Network error. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -35,22 +65,23 @@ export function RegisterForm() {
       <div className="bg-white/90 shadow-lg rounded-2xl p-10 w-full max-w-md backdrop-blur-md">
         <h2 className="text-3xl font-bold mb-6 text-center text-gray-900">Register</h2>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Toggle Switch */}
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            {error}
+          </div>
+        )}
+
+        {success && (
+          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+            {success}
+          </div>
+        )}
+
+        <div className="space-y-5">
           <div className="flex items-center justify-between mb-4">
-            <label className="text-gray-800 font-medium">Register as</label>
-            <div className="flex items-center space-x-2">
-              <span className="text-sm font-medium text-gray-700">Volunteer</span>
-              <input
-                type="checkbox"
-                checked={form.isVolunteer}
-                onChange={handleToggle}
-                className="accent-teal-600 w-5 h-5"
-              />
-            </div>
+            <label className="text-gray-800 font-medium">Register as Volunteer</label>
           </div>
 
-          {/* Form Fields */}
           <input
             type="text"
             name="name"
@@ -58,7 +89,8 @@ export function RegisterForm() {
             value={form.name}
             onChange={handleChange}
             required
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-teal-500 focus:outline-none"
+            disabled={loading}
+            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-teal-500 focus:border-teal-500 focus:outline-none disabled:opacity-50"
           />
 
           <input
@@ -68,7 +100,8 @@ export function RegisterForm() {
             value={form.email}
             onChange={handleChange}
             required
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-teal-500 focus:outline-none"
+            disabled={loading}
+            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-teal-500 focus:border-teal-500 focus:outline-none disabled:opacity-50"
           />
 
           <input
@@ -78,17 +111,19 @@ export function RegisterForm() {
             value={form.phone}
             onChange={handleChange}
             required
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-teal-500 focus:outline-none"
+            disabled={loading}
+            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-teal-500 focus:border-teal-500 focus:outline-none disabled:opacity-50"
           />
 
           <input
             type="password"
             name="password"
-            placeholder="Password"
+            placeholder="Password (min 6 characters)"
             value={form.password}
             onChange={handleChange}
             required
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-teal-500 focus:outline-none"
+            disabled={loading}
+            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-teal-500 focus:border-teal-500 focus:outline-none disabled:opacity-50"
           />
 
           <input
@@ -98,16 +133,19 @@ export function RegisterForm() {
             value={form.confirmPassword}
             onChange={handleChange}
             required
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-teal-500 focus:outline-none"
+            disabled={loading}
+            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-teal-500 focus:border-teal-500 focus:outline-none disabled:opacity-50"
           />
 
           <button
-            type="submit"
-            className="w-full bg-teal-600 text-white py-3 rounded-lg font-semibold hover:bg-teal-700 transition"
+            type="button"
+            onClick={handleSubmit}
+            disabled={loading}
+            className="w-full bg-teal-600 text-white py-3 rounded-lg font-semibold hover:bg-teal-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Register as {form.isVolunteer ? "Volunteer" : "Admin"}
+            {loading ? 'Registering...' : 'Register as Volunteer'}
           </button>
-        </form>
+        </div>
 
         <p className="text-sm text-center text-gray-600 mt-4">
           Already have an account?{" "}
