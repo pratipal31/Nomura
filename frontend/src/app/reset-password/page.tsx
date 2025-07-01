@@ -1,28 +1,55 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 
-export function LoginForm() {
+export function ResetPassword() {
   const [form, setForm] = useState({
-    email: "",
+    token: "",
     password: "",
+    confirmPassword: "",
   })
   const [loading, setLoading] = useState(false)
+  const [message, setMessage] = useState("")
   const [error, setError] = useState("")
+
+  useEffect(() => {
+    // Get token from URL parameters
+    const urlParams = new URLSearchParams(window.location.search)
+    const token = urlParams.get('token')
+    if (token) {
+      setForm(prev => ({ ...prev, token }))
+    } else {
+      setError("Invalid reset link")
+    }
+  }, [])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value })
-    if (error) setError("") // Clear error when user starts typing
+    if (error) setError("")
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async () => {
+    if (!form.password || !form.confirmPassword) {
+      setError("Both password fields are required")
+      return
+    }
+
+    if (form.password !== form.confirmPassword) {
+      setError("Passwords do not match")
+      return
+    }
+
+    if (form.password.length < 6) {
+      setError("Password must be at least 6 characters long")
+      return
+    }
+
     setLoading(true)
     setError("")
+    setMessage("")
 
     try {
-      const response = await fetch('http://localhost:5000/api/login', {
+      const response = await fetch('http://localhost:5000/api/reset-password', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -33,14 +60,12 @@ export function LoginForm() {
       const data = await response.json()
 
       if (response.ok) {
-        // Store user data in localStorage
-        localStorage.setItem('user_id', data.user_id.toString())
-        localStorage.setItem('user_data', JSON.stringify(data.user))
-        
-        // Redirect to home page
-        window.location.href = "/"
+        setMessage("Password reset successfully! Redirecting to login...")
+        setTimeout(() => {
+          window.location.href = "/login"
+        }, 2000)
       } else {
-        setError(data.error || 'Login failed')
+        setError(data.error || 'Failed to reset password')
       }
     } catch (err) {
       setError('Network error. Please try again.')
@@ -55,7 +80,7 @@ export function LoginForm() {
       style={{ backgroundImage: "url('/images/bg2.jpg')" }}
     >
       <div className="bg-white/90 shadow-lg rounded-2xl p-10 w-full max-w-md backdrop-blur-md">
-        <h2 className="text-3xl font-bold mb-6 text-center text-gray-900">Login</h2>
+        <h2 className="text-3xl font-bold mb-6 text-center text-gray-900">Reset Password</h2>
 
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -63,16 +88,18 @@ export function LoginForm() {
           </div>
         )}
 
-        <div className="space-y-5">
-          <div className="flex items-center justify-between mb-4">
-            <label className="text-gray-800 font-medium">Login as Volunteer</label>
+        {message && (
+          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+            {message}
           </div>
+        )}
 
+        <div className="space-y-5">
           <input
-            type="email"
-            name="email"
-            placeholder="Email"
-            value={form.email}
+            type="password"
+            name="password"
+            placeholder="New Password (min 6 characters)"
+            value={form.password}
             onChange={handleChange}
             required
             disabled={loading}
@@ -81,9 +108,9 @@ export function LoginForm() {
 
           <input
             type="password"
-            name="password"
-            placeholder="Password"
-            value={form.password}
+            name="confirmPassword"
+            placeholder="Confirm New Password"
+            value={form.confirmPassword}
             onChange={handleChange}
             required
             disabled={loading}
@@ -93,25 +120,18 @@ export function LoginForm() {
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={loading}
+            disabled={loading || !form.token}
             className="w-full bg-teal-600 text-white py-3 rounded-lg font-semibold hover:bg-teal-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? 'Logging in...' : 'Login as Volunteer'}
+            {loading ? 'Resetting...' : 'Reset Password'}
           </button>
         </div>
 
-        <div className="text-center mt-4">
-          <a href="/forgot-password" className="text-sm text-teal-600 hover:underline">
-            Forgot your password?
+        <div className="text-center mt-6">
+          <a href="/login" className="text-sm text-teal-600 hover:underline">
+            Back to Login
           </a>
         </div>
-
-        <p className="text-sm text-center text-gray-600 mt-4">
-          Don&apos;t have an account?{" "}
-          <a href="/register" className="text-teal-600 hover:underline">
-            Sign up
-          </a>
-        </p>
       </div>
     </div>
   )
