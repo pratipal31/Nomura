@@ -1,103 +1,94 @@
 "use client"
 
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { useRef } from 'react';
+import type React from "react"
+import { useState } from "react"
 
-export function LoginForm({
-    className,
-    ...props
-}: React.ComponentProps<"div">) {
-    const loginEmail = useRef(null);
-    const loginPassword = useRef(null);
-    return (
+export function LoginForm() {
+  const [form, setForm] = useState({
+    email: "",
+    password: "",
+    isVolunteer: true,
+  })
 
-        <div className={cn("flex flex-col gap-6", className)} {...props}>
-            <Card>
-                <CardHeader>
-                    <CardTitle>Login to your account</CardTitle>
-                    <CardDescription>
-                        Enter your email below to login to your account
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <form onSubmit={async (e) => {
-                        e.preventDefault();
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value })
+  }
 
-                        try {
-                            const response = await fetch("http://127.0.0.1:5000/login", {
-                                method: "POST",
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({
-                                    email: loginEmail?.current.value,
-                                    password: loginPassword?.current.value
-                                })
-                            });
-                            const data = await response.json();
+  const handleToggle = () => {
+    setForm({ ...form, isVolunteer: !form.isVolunteer })
+  }
 
-                            if (data.mesaage === "Logged in successfully.") {
-                                // Redirect to the homepage or any other desired route
-                                window.location.href = '/';
-                            } else {
-                                alert("Invalid credentials");
-                            }
-                        } catch (err) {
-                            console.error(err);
-                            alert("An error occurred while logging in.");
-                        }
-                    }}
-                    >
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    console.log("Logging in:", form)
+    window.location.href = "/"
+  }
 
-                        <div className="flex flex-col gap-6">
-                            <div className="grid gap-3">
-                                <Label htmlFor="email">Email</Label>
-                                <Input
-                                    id="email"
-                                    type="email"
-                                    name="loginEmail"
-                                    placeholder="m@example.com"
-                                    required
-                                    ref={loginEmail}
-                                />
-                            </div>
-                            <div className="grid gap-3">
-                                <div className="flex items-center">
-                                    <Label htmlFor="password">Password</Label>
-                                    <a
-                                        href="#"
-                                        className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
-                                    >
-                                        Forgot your password?
-                                    </a>
-                                </div>
-                                <Input id="password" type="password" required ref={loginPassword} />
-                            </div>
-                            <div className="flex flex-col gap-3">
-                                <Button type="submit" className="w-full">
-                                    Login
-                                </Button>
-                            </div>
-                        </div>
-                        <div className="mt-4 text-center text-sm">
-                            Don&apos;t have an account?{" "}
-                            <a href="/register" className="underline underline-offset-4">
-                                Register
-                            </a>
-                        </div>
-                    </form>
-                </CardContent>
-            </Card>
+  return (
+    <div
+      className="h-screen w-full bg-cover bg-center bg-no-repeat flex items-center justify-center px-4 fixed inset-0"
+      style={{ backgroundImage: "url('/images/bg2.jpg')" }}
+    >
+      <div className="bg-white/90 shadow-lg rounded-2xl p-10 w-full max-w-md backdrop-blur-md">
+        <h2 className="text-3xl font-bold mb-6 text-center text-gray-900">Login</h2>
+
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Toggle Switch */}
+          <div className="flex items-center justify-between mb-4">
+            <label className="text-gray-800 font-medium">Login as</label>
+            <div className="flex items-center space-x-2">
+              <span className="text-sm font-medium text-gray-700">Volunteer</span>
+              <input
+                type="checkbox"
+                checked={form.isVolunteer}
+                onChange={handleToggle}
+                className="accent-teal-600 w-5 h-5"
+              />
+            </div>
+          </div>
+
+          {/* Form Fields */}
+          <input
+            type="email"
+            name="email"
+            placeholder="Email"
+            value={form.email}
+            onChange={handleChange}
+            required
+            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-teal-500 focus:outline-none"
+          />
+
+          <input
+            type="password"
+            name="password"
+            placeholder="Password"
+            value={form.password}
+            onChange={handleChange}
+            required
+            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-teal-500 focus:outline-none"
+          />
+
+          <button
+            type="submit"
+            className="w-full bg-teal-600 text-white py-3 rounded-lg font-semibold hover:bg-teal-700 transition"
+          >
+            Login as {form.isVolunteer ? "Volunteer" : "Admin"}
+          </button>
+        </form>
+
+        <div className="text-center mt-4">
+          <a href="/forgot-password" className="text-sm text-teal-600 hover:underline">
+            Forgot your password?
+          </a>
         </div>
-    )
+
+        <p className="text-sm text-center text-gray-600 mt-4">
+          Don't have an account?{" "}
+          <a href="/register" className="text-teal-600 hover:underline">
+            Sign up
+          </a>
+        </p>
+      </div>
+    </div>
+  )
 }
