@@ -1,9 +1,12 @@
 "use client"
-
+import Link from "next/link"
+import { useRouter } from "next/navigation"
 import type React from "react"
 import { useState } from "react"
 
 export function LoginForm() {
+  const router = useRouter()
+
   const [form, setForm] = useState({
     email: "",
     password: "",
@@ -20,8 +23,11 @@ export function LoginForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+
     console.log("Logging in:", form)
-    window.location.href = "/"
+
+    // ✅ Redirect to home page using App Router
+    router.push("/")
   }
 
   return (
@@ -67,13 +73,14 @@ export function LoginForm() {
             required
             className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-teal-500 focus:outline-none"
           />
-
+          <Link href="/Volunteer/home">
           <button
             type="submit"
             className="w-full bg-teal-600 text-white py-3 rounded-lg font-semibold hover:bg-teal-700 transition"
           >
             Login as {form.isVolunteer ? "Volunteer" : "Admin"}
           </button>
+          </Link>
         </form>
 
         <div className="text-center mt-4">
