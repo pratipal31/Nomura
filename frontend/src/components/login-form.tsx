@@ -4,8 +4,6 @@
 import React, { useState } from "react"
 
 export function LoginForm() {
-  const router = useRouter()
-
   const [form, setForm] = useState({
     email: "",
     password: "",
@@ -91,7 +89,7 @@ export function LoginForm() {
             disabled={loading}
             className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-teal-500 focus:border-teal-500 focus:outline-none disabled:opacity-50"
           />
-          <Link href="/Volunteer/home">
+
           <button
             type="button"
             onClick={handleSubmit}

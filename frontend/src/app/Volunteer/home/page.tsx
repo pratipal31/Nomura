@@ -23,7 +23,7 @@ const Home = () => {
               { label: "Home", path: "/Volunteer/home" },
               { label: "Events", path: "/Volunteer/events" },
               { label: "Leaderboard", path: "/Volunteer/leaderboard" },
-              { label: "AI Assistant", path: "/Volunteer/ai_assistant" },
+              { label: "AI Assistant", path: "/Volunteer/quiz" },
             ].map((item, idx) => (
               <Link
                 key={idx}
