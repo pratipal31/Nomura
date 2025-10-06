@@ -335,7 +335,7 @@ class GoogleMapsLoader {
       this.loading = true
 
       const script = document.createElement("script")
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry,places`
+      script.src = ``
       script.async = true
       script.defer = true
 
@@ -444,7 +444,7 @@ const BeachMap: React.FC<{
   const [loadError, setLoadError] = useState<string | null>(null)
 
   // Replace with your actual Google Maps API key or use environment variable
-  const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "AIzaSyBEy94hZDqzOXy8U0ioRZdZ8R94R5-ip80"
+  const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ""
 
   const initializeMap = useCallback(() => {
     if (!mapRef.current || typeof window === "undefined" || !window.google || !window.google.maps) return
